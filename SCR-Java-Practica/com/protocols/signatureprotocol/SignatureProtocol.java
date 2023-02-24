@@ -1,4 +1,4 @@
-package com.protocols;
+package com.protocols.signatureprotocol;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
