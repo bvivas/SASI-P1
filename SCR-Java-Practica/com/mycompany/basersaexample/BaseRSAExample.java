@@ -4,16 +4,10 @@
 
 package com.mycompany.basersaexample;
 
-import java.math.BigInteger;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
 
 import javax.crypto.Cipher;
 
@@ -29,8 +23,6 @@ public class BaseRSAExample
     {
         byte[]           input = new byte[] { (byte)0xbe, (byte)0xef };
         Cipher	         cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        KeyFactory       keyFactory = KeyFactory.getInstance("RSA");
-        
                 
         // Creando un objeto generador de KeyPair para RSA
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("RSA");
