@@ -35,7 +35,7 @@ public class TamperedExample
         System.out.println("input : " + input);
         
         // encryption step
-        // Aquí diframos el mensaje: "Transfer 0000100 to AC 1234-5678"
+        // Aquí ciframos el mensaje: "Transfer 0000100 to AC 1234-5678"
         // En el modo CTR
         cipher.init(Cipher.ENCRYPT_MODE, key, ivSpec);
         
@@ -43,12 +43,12 @@ public class TamperedExample
 
         // tampering step
         // Aquí manipulamos el mensaje
-        // Sabemos la estructura del mensaje: el byte 9  es el digito inicial 
+        // Sabemos la estructura del mensaje: el byte 9  es el dígito inicial 
         // de la cantidad a transferir. Sabemos que  está a cero lo podemos poner 
         // a nueve:
         // cipherText[9] ^= '0' ^ '9': cuando se descifre el mensaje, el ‘0’ 
         // que debería dar en esa posición se combina con '0' ^ '9‘  quedando 
-        // un 9 en esa posición. Recordar que A xor A= 0, y el operador  
+        // un 9 en esa posición. Recordar que A xor A = 0, y el operador  
         // “^=“ es “xor" sobre los bits y asignación.
         
         cipherText[9] ^= '0' ^ '9';
