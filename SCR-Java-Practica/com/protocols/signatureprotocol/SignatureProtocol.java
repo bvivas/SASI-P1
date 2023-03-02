@@ -103,6 +103,12 @@ public class SignatureProtocol {
         // Mostrando mensaje cabecera del intruso
         System.out.println("\n---------- INTRUDER AREA ----------");
 
+        // Modificando mensaje
+        senderMessage.cipheredMessage[9] ^= '0' ^ '9';
+
+        // Mostrando el mensaje encriptado modificado
+        System.out.println("\nTampered encrypted message: " + Utils.toHex(senderMessage.cipheredMessage));
+
         // Devolviendo el mensaje modificado
         return senderMessage;
     }
@@ -157,7 +163,7 @@ public class SignatureProtocol {
         Boolean tamperedMessage = true; // Defines if the message will be intercepted and tampered or not
         String input = "Transfer 0000100 to AC 1234-5678";
         String rsaInstance = "RSA/ECB/PKCS1Padding";
-        String hashInstance = "SHA3-256";
+        String hashInstance = "SHA3-512";
         String aesInstance = "AES/CTR/NoPadding";
         SignatureProtocol protocol = new SignatureProtocol();
         SecureRandom random = new SecureRandom();
