@@ -83,9 +83,14 @@ public class SignatureProtocol {
         // Se muestra el digest cifrado
         System.out.println("\nEncrypted digest: " + Utils.toHex(cipherDigest));
 
+        // Concatenando el digest cifrado al texto plano
+        byte[] fullMessage = new byte[Utils.toByteArray(inputMessage).length + cipherDigest.length];
+        System.arraycopy(Utils.toByteArray(inputMessage), 0, fullMessage, 0, Utils.toByteArray(inputMessage).length);
+        System.arraycopy(cipherDigest, 0, fullMessage, Utils.toByteArray(inputMessage).length, cipherDigest.length);
+
         // Cifrando el mensaje con la clave simétrica
         symmetricCipher.init(Cipher.ENCRYPT_MODE, aesKeySpec, gcmParameterSpec);
-        byte[] cipheredMessage = symmetricCipher.doFinal(Utils.toByteArray(inputMessage + Utils.toHex(cipherDigest)));
+        byte[] cipheredMessage = symmetricCipher.doFinal(fullMessage);
 
         // Se muestra el mensaje cifrado
         System.out.println("\nEncrypted message: " + Utils.toHex(cipheredMessage));
@@ -135,19 +140,21 @@ public class SignatureProtocol {
         byte[] dummyDigest = hash.digest();
         asymmetricCipher.init(Cipher.ENCRYPT_MODE, senderMessage.pubKey);
         byte[] encryptedDummyDigest = asymmetricCipher.doFinal(dummyDigest);
-        int encryptedDigestLenght = Utils.toHex(encryptedDummyDigest).length();
+        int encryptedDigestLenght = encryptedDummyDigest.length;
         
         // Descrifrando mensaje recibido con la clave simétrica
         symmetricCipher.init(Cipher.DECRYPT_MODE, aesKeySpec, gcmParameterSpec);
         byte[] decryptedMessage = symmetricCipher.doFinal(senderMessage.cipheredMessage);
 
         // Separando el digest del mensaje en texto claro
-        byte[] receivedDigest = Utils.toString(decryptedMessage).substring(Utils.toString(decryptedMessage).length() - encryptedDigestLenght).getBytes();
-        String receivedText = Utils.toString(decryptedMessage).replace(Utils.toString(receivedDigest), "");
-
+        byte[] receivedDigest = new byte[encryptedDigestLenght];
+        byte[] receivedText = new byte[decryptedMessage.length - encryptedDigestLenght];
+        System.arraycopy(decryptedMessage, decryptedMessage.length - encryptedDigestLenght, receivedDigest, 0, encryptedDigestLenght);
+        System.arraycopy(decryptedMessage, 0, receivedText, 0, receivedText.length);
+        
         // Mostrando mensaje descifrado
-        System.out.println("\nDecrypted message: " + receivedText);
-        System.out.println("\nEncrypted received digest: " + Utils.toString(receivedDigest));
+        System.out.println("\nDecrypted message: " + Utils.toString(receivedText));
+        System.out.println("\nEncrypted received digest: " + Utils.toHex(receivedDigest));
         
         // Descifrando el digest con la clave pública
         asymmetricCipher.init(Cipher.DECRYPT_MODE, senderMessage.pubKey);
@@ -157,7 +164,7 @@ public class SignatureProtocol {
         System.out.println("\nDecrypted digest: " + Utils.toHex(decryptedDigest));
 
         // Se obtiene el digest del mensaje descifrado
-        hash.update(Utils.toByteArray(receivedText));
+        hash.update(receivedText);
         byte[] calculatedDigest = hash.digest();
         
         // Se muestra el digest producido
@@ -177,7 +184,7 @@ public class SignatureProtocol {
         throws Exception
     {
         // Definiendo variables necesarias
-        Boolean tamperedMessage = false; // Defines if the message will be intercepted and tampered or not
+        Boolean tamperedMessage = true; // Defines if the message will be intercepted and tampered or not
         String input = "Transfer 0000100 to AC 1234-5678";
         String rsaInstance = "RSA/ECB/PKCS1Padding";
         String hashInstance = "SHA3-512";
