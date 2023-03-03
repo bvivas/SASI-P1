@@ -6,12 +6,11 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.security.Key;
 
 import javax.crypto.Cipher;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+
+import javax.crypto.spec.IvParameterSpec;
 
 import com.mycompany.basersaexample.Utils;
 
@@ -28,9 +27,6 @@ import com.mycompany.basersaexample.Utils;
  * the identity of the signatory can be validated.
  */
 public class SignatureProtocol {
-    public static final int AES_KEY_SIZE = 256;
-    public static final int GCM_IV_LENGTH = 12;
-    public static final int GCM_TAG_LENGTH = 16;
     // Esta clase contiene todo lo que el emisor envía al receptor
     private class SenderResponse {
         private PublicKey pubKey;
@@ -38,7 +34,7 @@ public class SignatureProtocol {
     }
 
     // Esta función devuelve el mensaje que enviaría un emisor en la conversación con RSA
-    public SenderResponse sender(String inputMessage, String rsaInstance, String hashInstance, String aesInstance, SecretKeySpec aesKeySpec, GCMParameterSpec gcmParameterSpec)
+    public SenderResponse sender(String inputMessage, String rsaInstance, String hashInstance, String aesInstance, Key aesKey, IvParameterSpec ivSpec)
         throws Exception
     {
         // Instanciado cifrados
@@ -89,7 +85,7 @@ public class SignatureProtocol {
         System.arraycopy(cipherDigest, 0, fullMessage, Utils.toByteArray(inputMessage).length, cipherDigest.length);
 
         // Cifrando el mensaje con la clave simétrica
-        symmetricCipher.init(Cipher.ENCRYPT_MODE, aesKeySpec, gcmParameterSpec);
+        symmetricCipher.init(Cipher.ENCRYPT_MODE, aesKey, ivSpec);
         byte[] cipheredMessage = symmetricCipher.doFinal(fullMessage);
 
         // Se muestra el mensaje cifrado
@@ -122,7 +118,7 @@ public class SignatureProtocol {
     }
 
     // Esta función comprueba el mensaje enviado por el emisor para ver que es correcto y la firma auténtica
-    public void receiver(SenderResponse senderMessage, String rsaInstance, String hashInstance, String aesInstance, SecretKeySpec aesKeySpec, GCMParameterSpec gcmParameterSpec)
+    public void receiver(SenderResponse senderMessage, String rsaInstance, String hashInstance, String aesInstance, Key aesKey, IvParameterSpec ivSpec)
         throws Exception
     {
         // Instanciando cifrados
@@ -143,7 +139,7 @@ public class SignatureProtocol {
         int encryptedDigestLenght = encryptedDummyDigest.length;
         
         // Descrifrando mensaje recibido con la clave simétrica
-        symmetricCipher.init(Cipher.DECRYPT_MODE, aesKeySpec, gcmParameterSpec);
+        symmetricCipher.init(Cipher.DECRYPT_MODE, aesKey, ivSpec);
         byte[] decryptedMessage = symmetricCipher.doFinal(senderMessage.cipheredMessage);
 
         // Separando el digest del mensaje en texto claro
@@ -188,21 +184,16 @@ public class SignatureProtocol {
         String input = "Transfer 0000100 to AC 1234-5678";
         String rsaInstance = "RSA/ECB/PKCS1Padding";
         String hashInstance = "SHA3-512";
-        String aesInstance = "AES/GCM/NoPadding";
+        String aesInstance = "AES/CTR/NoPadding";
         SignatureProtocol protocol = new SignatureProtocol();
 
         // Instanciando cifrado simétrico
-        KeyGenerator kg = KeyGenerator.getInstance("AES");
-        kg.init(AES_KEY_SIZE);
-        SecretKey aesKey = kg.generateKey();
-        byte[] IV = new byte[GCM_IV_LENGTH];
         SecureRandom random = new SecureRandom();
-        random.nextBytes(IV);
-        SecretKeySpec keySpec = new SecretKeySpec(aesKey.getEncoded(), "AES");
-        GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV);
+        IvParameterSpec ivSpec = Utils.createCtrIvForAES(1, random);
+        Key aesKey = Utils.createKeyForAES(256, random);
         
         // Obteniendo mensaje del emisor
-        SenderResponse senderMessage = protocol.sender(input, rsaInstance, hashInstance, aesInstance, keySpec, gcmParameterSpec);
+        SenderResponse senderMessage = protocol.sender(input, rsaInstance, hashInstance, aesInstance, aesKey, ivSpec);
 
         // Interceptando y modificando el mensaje encriptado si se ha seleccionado esa opción
         if (tamperedMessage) {
@@ -210,6 +201,6 @@ public class SignatureProtocol {
         }
 
         // Verificando la firma y mensaje recibidos
-        protocol.receiver(senderMessage, rsaInstance, hashInstance, aesInstance, keySpec, gcmParameterSpec);
+        protocol.receiver(senderMessage, rsaInstance, hashInstance, aesInstance, aesKey, ivSpec);
     }
 }
