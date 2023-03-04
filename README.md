@@ -24,6 +24,6 @@ Práctica 1
         - [ ] Estudiar otros tipos de funciones Hash y Mac en Java
     - [ ] Utils
 - [ ] Implementar y explicar los protocolos
-    - [ ] Hash firma digital y confidencialidad
+    - [x] Hash firma digital y confidencialidad
     - [x] Intercambio de claves
 
