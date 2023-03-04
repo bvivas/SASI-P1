@@ -1,5 +1,6 @@
 package com.protocols.keydistributionprotocol;
 
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -9,14 +10,15 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import com.mycompany.basersaexample.Utils;
-
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
+
+import com.mycompany.basersaexample.Utils;
+
 
 public class KeyDistributionProtocol {
 
@@ -29,6 +31,14 @@ public class KeyDistributionProtocol {
     public static final int GCM_IV_LENGTH = 12;
     public static final int GCM_TAG_LENGTH = 16;
 
+    /**
+     * Concatena dos bytearrays
+     * 
+     * @param b1
+     * @param b2
+     * @return los dos bytearrays concatenados
+     * @throws IOException
+     */
     public static byte[] concatByteArrays(byte[] b1, byte[] b2) throws IOException {
 
         byte[] concat = new byte[b1.length + b2.length];
@@ -40,15 +50,18 @@ public class KeyDistributionProtocol {
     }
 
     public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, 
-    InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException, IOException {
+                                            InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException,
+                                            NoSuchProviderException, IOException {
 
+        // Obtenemos una instancia de AES utilizando GCM sin padding
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
 
-        // Generar claves maestras de A y B que seran compartidas con el KDC
+        // Creamos el generador de claves para AES
         KeyGenerator kg = KeyGenerator.getInstance("AES");
         kg.init(AES_KEY_SIZE);
-        
-         // Clave para A
+
+        // Generamos las claves maestras de A y B, que seran compartidas con el KDC
+        // Clave para A
         SecretKey ka = kg.generateKey();
         byte[] IV_A = new byte[GCM_IV_LENGTH];
         SecureRandom randomA = new SecureRandom();
@@ -59,7 +72,8 @@ public class KeyDistributionProtocol {
 
         // Especificaciones de GCM para A
         GCMParameterSpec gcmParameterSpecA = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV_A);
-        
+
+
          // Clave para B
         SecretKey kb = kg.generateKey();
         byte[] IV_B = new byte[GCM_IV_LENGTH];
@@ -72,15 +86,13 @@ public class KeyDistributionProtocol {
         // Especificaciones de GCM para B
         GCMParameterSpec gcmParameterSpecB = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV_B);
 
+
         // Instancia del usuario A
-        User userA = new User(ka);
-        userA.setId(ID_A);
+        User userA = new User(ID_A, ka);
 
         // Instancia del usuario B
-        User userB = new User(kb);
-        userB.setId(ID_B);
+        User userB = new User(ID_B, kb);
 
-        // Claves maestras
         System.out.println("Ka: " + ka);
         System.out.println("Kb: " + kb + "\n");
 
@@ -88,40 +100,48 @@ public class KeyDistributionProtocol {
         // (1) A --- ID_A || ID_B || N1 ---> KDC
         // A genera un nonce y crea el primer mensaje
         String N1 = userA.generateNonce();
-        String m1 = ID_A + ID_B + N1;
+        String m1 = userA.getId() + userB.getId() + N1;
 
         System.out.println("(1) A --- ID_A || ID_B || N1 ---> KDC");
-        System.out.println("\tID A: " + ID_A);
-        System.out.println("\tID B: " + ID_B);
+        System.out.println("\tID A: " + userA.getId());
+        System.out.println("\tID B: " + userB.getId());
         System.out.println("\tNonce N1: " + N1);
         System.out.println("\tMessage 1: " + m1);
 
 
         // (2) KDC --- E(Ka, [Ks||ID_A||ID_B||N1]) || E(Kb, [Ks||ID_A]) ---> A
-        // El KDC genera una clave de sesion
-        SecretKey ks = kg.generateKey();
-
-        // IV para el primer cifrado de Ks
-        byte[] IV_S1 = new byte[GCM_IV_LENGTH];
-        SecureRandom randomS1 = new SecureRandom();
-        randomS1.nextBytes(IV_S1);
-
-        // IV para el segundo cifrado de Ks
-        byte[] IV_S2 = new byte[GCM_IV_LENGTH];
-        SecureRandom randomS2 = new SecureRandom();
-        randomS2.nextBytes(IV_S2);
-
-        // Especificaciones de Ks
-        SecretKeySpec keySpecS = new SecretKeySpec(ks.getEncoded(), "AES");
-
-        // Especificaciones de GCM para el primer cifrado de Ks
-        GCMParameterSpec gcmParameterSpecS1 = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV_S1);
-
-        // Especificaciones de GCM para el segundo cifrado de Ks
-        GCMParameterSpec gcmParameterSpecS2 = new GCMParameterSpec(GCM_TAG_LENGTH * 8, IV_S2);
 
         // Instancia del KDC
-        KDC kdc = new KDC(ka, kb, ks);
+        KDC kdc = new KDC(ka, kb);
+
+        // Comprobar que las claves maestras coinciden
+        if(kdc.getKa() != userA.getMasterKey()) {
+            System.out.println("El KDC y A no comparten la misma clave maestra");
+            System.exit(0);
+        }
+        if(kdc.getKb() != userB.getMasterKey()) {
+            System.out.println("El KDC y B no comparten la misma clave maestra");
+            System.exit(0);
+        }
+
+        // El KDC genera una clave de sesion Ks
+        SecretKey ks = kdc.generateKs();
+
+        // IV para el primer cifrado de Ks
+        byte[] IV_S1 = kdc.generateIV();
+
+        // IV para el segundo cifrado de Ks
+        byte[] IV_S2 = kdc.generateIV();
+
+        // Especificaciones de Ks
+        SecretKeySpec keySpecS = kdc.generateKsSpec(ks); 
+
+        // Especificaciones de GCM para el primer cifrado de Ks
+        GCMParameterSpec gcmParameterSpecS1 = kdc.generateGCMParameterSpec(IV_S1);
+
+        // Especificaciones de GCM para el segundo cifrado de Ks
+        GCMParameterSpec gcmParameterSpecS2 = kdc.generateGCMParameterSpec(IV_S2);
+
 
         // Primera parte del mensaje (Ks || ID_A || ID_B || N1)
         String m2A = ks + m1;
@@ -130,7 +150,7 @@ public class KeyDistributionProtocol {
         byte[] m2AEncrypted = cipher.doFinal(Utils.toByteArray(m2A));
 
         // Segunda parte del mensaje (Ks || ID_A)
-        String m2B = ks + ID_A;
+        String m2B = ks + userA.getId();
         // Se cifra con Kb
         cipher.init(Cipher.ENCRYPT_MODE, keySpecB, gcmParameterSpecB);
         byte[] m2BEncrypted = cipher.doFinal(Utils.toByteArray(m2B));
@@ -157,13 +177,14 @@ public class KeyDistributionProtocol {
         // A descifra la primera parte del mensaje con su clave maestra, Ka
         cipher.init(Cipher.DECRYPT_MODE, keySpecA, gcmParameterSpecA);
         byte[] m2ADecrypted = cipher.doFinal(m2AReceived);
+
         System.out.println("\n\tMessage 2A decrypted: " + Utils.toString(m2ADecrypted));
 
         // Comprobar que la parte del mensaje cifrado por el KDC con Ka es igual que el descifrado por A con Ka
         if(Utils.toString(m2ADecrypted).equals(m2A)) {
-            System.out.println("\t\tKs: " + Utils.toString(m2ADecrypted).substring(0, m2ADecrypted.length - (ID_A.length() + ID_B.length() + N1.length())));
-            System.out.println("\t\tID A: " + Utils.toString(m2ADecrypted).substring(m2ADecrypted.length - (ID_A.length() + ID_B.length() + N1.length()), m2ADecrypted.length - (ID_B.length() + N1.length())));
-            System.out.println("\t\tID B: " + Utils.toString(m2ADecrypted).substring(m2ADecrypted.length - (ID_B.length() + N1.length()), m2ADecrypted.length - N1.length()));
+            System.out.println("\t\tKs: " + Utils.toString(m2ADecrypted).substring(0, m2ADecrypted.length - (userA.getId().length() + userB.getId().length() + N1.length())));
+            System.out.println("\t\tID A: " + Utils.toString(m2ADecrypted).substring(m2ADecrypted.length - (userA.getId().length() + userB.getId().length() + N1.length()), m2ADecrypted.length - (userB.getId().length() + N1.length())));
+            System.out.println("\t\tID B: " + Utils.toString(m2ADecrypted).substring(m2ADecrypted.length - (userB.getId().length() + N1.length()), m2ADecrypted.length - N1.length()));
             System.out.println("\t\tNonce N1: " + Utils.toString(m2ADecrypted).substring(m2ADecrypted.length - N1.length(), m2ADecrypted.length));
             System.out.println("\t[correct decryption]");
         } else {
@@ -172,6 +193,7 @@ public class KeyDistributionProtocol {
 
 
         // (3) A --- E(Kb, [Ks || ID_A]) ---> B
+
         // A envia la segunda parte del mensaje del KDC a B, y
         // B descifra la parte del mensaje que le corresponde con su clave maestra, Kb
         cipher.init(Cipher.DECRYPT_MODE, keySpecB, gcmParameterSpecB);
@@ -183,8 +205,8 @@ public class KeyDistributionProtocol {
 
         // Comprobar que la parte del mensaje cifrado por el KDC con Kb es igual que el descifrado por B con Kb
         if(Utils.toString(m2BDecrypted).equals(m2B)) {
-            System.out.println("\t\tKs: " + Utils.toString(m2BDecrypted).substring(0, m2BDecrypted.length - ID_A.length()));
-            System.out.println("\t\tID A: " + Utils.toString(m2BDecrypted).substring(m2BDecrypted.length - ID_A.length(), m2BDecrypted.length));
+            System.out.println("\t\tKs: " + Utils.toString(m2BDecrypted).substring(0, m2BDecrypted.length - userA.getId().length()));
+            System.out.println("\t\tID A: " + Utils.toString(m2BDecrypted).substring(m2BDecrypted.length - userA.getId().length(), m2BDecrypted.length));
             System.out.println("\t[correct decryption]");
         } else {
             System.out.println("\t[incorrect decryption]");
@@ -192,6 +214,7 @@ public class KeyDistributionProtocol {
 
 
         // (4) B --- E(Ks, N2) ---> A
+
         // B genera el nonce N2
         String N2 = userB.generateNonce();
 
@@ -217,12 +240,10 @@ public class KeyDistributionProtocol {
         }
 
         // (5) A --- E(Ks, f(N2)) ---> B
-        // A realiza una transformacion al nonce N2
+
+        // A realiza una transformacion al nonce N2.
         // La transformacion sera darle la vuelta a la cadena
-        StringBuilder N2Reverse = new StringBuilder();
-        N2Reverse.append(N2);
-        N2Reverse = N2Reverse.reverse();
-        String N2F = N2Reverse.toString();
+        String N2F = userA.reverseNonce(N2);
 
         // A cifra con Ks el nonce N2 transformado
         cipher.init(Cipher.ENCRYPT_MODE, keySpecS, gcmParameterSpecS2);
@@ -238,10 +259,7 @@ public class KeyDistributionProtocol {
         System.out.println("\n\tDecrypted reversed nonce (f(N2)): " + Utils.toString(N2FDecrypted));
 
         // B comprueba que el nonce recibido es el nonce que envio al reves
-        StringBuilder N2Check = new StringBuilder();
-        N2Check.append(Utils.toString(N2FDecrypted));
-        N2Check = N2Check.reverse();
-        String N2FCheck = N2Check.toString();
+        String N2FCheck = userB.reverseNonce(Utils.toString(N2FDecrypted));
 
         if(N2FCheck.equals(N2)) {
             System.out.println("\t[authenticacion completed]");
