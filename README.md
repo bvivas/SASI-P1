@@ -6,10 +6,10 @@ Práctica 1
     - [ ] Cifrado asimétrico, RSA (Base RSA Example)
         - [ ] Estudiar e investigar otros esquemas de cifrados asimétricos en Java
         - [ ] Estudiar e investigar el intercambio de claves Diffie-Hellman en Java
-    - [ ] Ejemplo AES GCM
+    - [x] Ejemplo AES GCM
     - [ ] List Algorithms
         - [ ] Investigar los algoritmos disponibles
-    - [ ] Policy Test
+    - [x] Policy Test
     - [ ] Cifrados simétricos (Simple Symmetric Example)
         - [ ] Investigar cómo cifrar bloques de más de 128 bit
         - [ ] Investigar otros modos de operación, además del ECB
