@@ -11,8 +11,8 @@ Práctica 1
         - [ ] Investigar los algoritmos disponibles
     - [x] Policy Test
     - [ ] Cifrados simétricos (Simple Symmetric Example)
-        - [ ] Investigar cómo cifrar bloques de más de 128 bit
-        - [ ] Investigar otros modos de operación, además del ECB
+        - [x] Investigar cómo cifrar bloques de más de 128 bit
+        - [x] Investigar otros modos de operación, además del ECB
         - [ ] Estudiar e investigar otros algoritmos simétricos con la librería de Java
     - [ ] Cifrados simétricos con padding (Simple Symmetric Padding Example)
         - [ ] Comparar con NoPadding del código anterior (documentos PKCS #5)
@@ -23,7 +23,7 @@ Práctica 1
         - [ ] Por qué esta manipulación no funciona
         - [ ] Estudiar otros tipos de funciones Hash y Mac en Java
     - [ ] Utils
-- [ ] Implementar y explicar los protocolos
+- [x] Implementar y explicar los protocolos
     - [x] Hash firma digital y confidencialidad
     - [x] Intercambio de claves
 
