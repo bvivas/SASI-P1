@@ -2,13 +2,13 @@ SEGURIDAD Y AUDITORÍA DE LOS SISTEMAS DE INFORMACIÓN
 
 Práctica 1
 
-- [ ] Explicar el código del profe (qué hace, funciones, etc.)
-    - [ ] Cifrado asimétrico, RSA (Base RSA Example)
-        - [ ] Estudiar e investigar otros esquemas de cifrados asimétricos en Java
-        - [ ] Estudiar e investigar el intercambio de claves Diffie-Hellman en Java
+- [x] Explicar el código del profe (qué hace, funciones, etc.)
+    - [x] Cifrado asimétrico, RSA (Base RSA Example)
+        - [x] Estudiar e investigar otros esquemas de cifrados asimétricos en Java
+        - [x] Estudiar e investigar el intercambio de claves Diffie-Hellman en Java
     - [x] Ejemplo AES GCM
-    - [ ] List Algorithms
-        - [ ] Investigar los algoritmos disponibles
+    - [x] List Algorithms
+        - [x] Investigar los algoritmos disponibles
     - [x] Policy Test
     - [x] Cifrados simétricos (Simple Symmetric Example)
         - [x] Investigar cómo cifrar bloques de más de 128 bit
@@ -22,7 +22,7 @@ Práctica 1
     - [x] Modo CTR, manipulación, Hash (Tampered with Digest Example)
         - [x] Por qué esta manipulación no funciona
         - [x] Estudiar otros tipos de funciones Hash y Mac en Java
-    - [ ] Utils
+    - [x] Utils
 - [x] Implementar y explicar los protocolos
     - [x] Hash firma digital y confidencialidad
     - [x] Intercambio de claves
